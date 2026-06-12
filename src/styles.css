@@ -1,0 +1,155 @@
+/* Kazooyak — instrument UI
+   Dark so the active chords glow; pads are colour-coded by harmonic function,
+   which is both the visual signature and a quiet theory lesson. */
+
+:root {
+  --ink:        #13151b;
+  --ink-2:      #1b1e27;
+  --panel:      #232733;
+  --line:       #2f3441;
+  --text:       #eef0f5;
+  --muted:      #8b94a6;
+
+  /* The seven scale degrees, coloured by function:
+     home/stable -> warm, tension/pull -> hot, unstable -> cold steel. */
+  --deg-1: #e8b04b; /* I    tonic     (home, gold)        */
+  --deg-2: #4fb3a6; /* ii   supertonic (teal)             */
+  --deg-3: #6c7bd1; /* iii  mediant    (indigo)           */
+  --deg-4: #5fb45a; /* IV   subdominant (open green)      */
+  --deg-5: #e5654b; /* V    dominant   (tension, vermilion)*/
+  --deg-6: #a86bc9; /* vi   submediant (violet)           */
+  --deg-7: #7c93a8; /* vii° leading    (unstable steel)   */
+
+  --rec:  #e5654b;
+  --play: #5fb45a;
+
+  --font: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0; height: 100%;
+  background: var(--ink); color: var(--text);
+  font-family: var(--font);
+  overscroll-behavior: none;
+  -webkit-user-select: none; user-select: none;
+}
+
+#app {
+  display: flex; flex-direction: column;
+  height: 100dvh;
+  max-width: 540px; margin: 0 auto;
+  padding: env(safe-area-inset-top) 12px env(safe-area-inset-bottom);
+  gap: 10px;
+}
+
+/* ---- Header ---- */
+header {
+  display: flex; align-items: baseline; gap: 8px;
+  padding: 8px 2px 0;
+}
+.wordmark { font-weight: 800; font-size: 22px; letter-spacing: -0.5px; }
+.wordmark span { color: var(--deg-1); }
+.tag {
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 4px; padding: 1px 5px;
+  text-transform: uppercase; letter-spacing: 1px;
+}
+
+/* ---- Control bar ---- */
+.controls {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+}
+.ctl {
+  background: var(--ink-2); border: 1px solid var(--line); border-radius: 12px;
+  padding: 8px 10px; display: flex; align-items: center; justify-content: space-between;
+}
+.ctl .lab { font-family: var(--mono); font-size: 10px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px; }
+.ctl .val { font-weight: 700; font-size: 18px; min-width: 3ch; text-align: center; }
+.ctl .stepper { display: flex; align-items: center; gap: 4px; }
+.stepper button {
+  width: 30px; height: 30px; border-radius: 8px;
+  background: var(--panel); border: 1px solid var(--line); color: var(--text);
+  font-size: 16px; line-height: 1; cursor: pointer; touch-action: manipulation;
+}
+.stepper button:active { background: var(--line); }
+.ctl.vol { grid-column: 1 / -1; }
+.ctl.vol input[type=range] { flex: 1; margin-left: 12px; accent-color: var(--deg-1); }
+
+/* ---- Chord pads (staggered, like the hardware) ---- */
+.pads {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: 1fr 1fr;
+  gap: 8px; min-height: 0;
+}
+.pad {
+  border-radius: 14px; border: 1px solid var(--line);
+  background: var(--ink-2);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; cursor: pointer; position: relative; overflow: hidden;
+  touch-action: none;
+  transition: transform .04s ease, filter .08s ease;
+}
+.pad .roman { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.pad .name  { font-weight: 800; font-size: clamp(18px, 5vw, 28px); }
+/* a colour wash keyed to scale degree, intensifying when held */
+.pad::before {
+  content: ""; position: absolute; inset: 0; opacity: .14;
+  background: var(--c); transition: opacity .08s ease;
+}
+.pad.active { transform: scale(.97); }
+.pad.active::before { opacity: .55; }
+.pad.active .roman { color: var(--text); }
+
+/* ---- Quality dial (8-way, mirrors the manual's joystick) ---- */
+.dial-wrap { display: flex; justify-content: center; }
+.dial {
+  position: relative; width: 230px; height: 196px;
+}
+.slot {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 58px; height: 38px; border-radius: 10px;
+  background: var(--ink-2); border: 1px solid var(--line); color: var(--muted);
+  font-family: var(--mono); font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; touch-action: manipulation;
+}
+.slot.active { background: var(--deg-1); color: #1a1300; border-color: var(--deg-1); }
+.dial .hub {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 64px; height: 64px; border-radius: 50%;
+  border: 2px dashed var(--line);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--mono); font-size: 10px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 1px; text-align: center;
+}
+
+/* ---- Looper transport ---- */
+.looper {
+  height: 56px; border-radius: 14px; border: 1px solid var(--line);
+  background: var(--ink-2); color: var(--text);
+  font-weight: 800; font-size: 18px; letter-spacing: .5px;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  cursor: pointer; touch-action: manipulation;
+}
+.looper .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--muted); }
+.looper[data-state="recording"] { border-color: var(--rec); color: var(--rec); }
+.looper[data-state="recording"] .dot { background: var(--rec); animation: pulse 1s infinite; }
+.looper[data-state="playing"]   { border-color: var(--play); color: var(--play); }
+.looper[data-state="playing"] .dot { background: var(--play); }
+@keyframes pulse { 50% { opacity: .25; } }
+
+/* install hint */
+.hint {
+  font-family: var(--mono); font-size: 11px; color: var(--muted);
+  text-align: center; padding: 2px 8px 6px; line-height: 1.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pad, .looper .dot { transition: none; animation: none; }
+}
